@@ -7,4 +7,4 @@ build-main:
 dev:
 	mkdir -p dist/
 	go build -tags debug -o dist/discord-plays-xyz .
-	DEV_FOLDER="$(pwd)" ./dist/discord-plays-xyz
+	./dist/discord-plays-xyz

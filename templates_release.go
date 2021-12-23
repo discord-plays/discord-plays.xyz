@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	//go:embed views/
+	//go:embed views
 	viewsFiles embed.FS
 )
 
