@@ -5,6 +5,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"path"
 )
 
@@ -23,6 +24,10 @@ func getTemplateFileByName(a string) string {
 	return string(b)
 }
 
-func getAssetsFilesystem() embed.FS {
-	return assetsFiles
+func getAssetsFilesystem() fs.FS {
+	f, err := fs.Sub(assetsFiles, "assets")
+	if err != nil {
+		return nil
+	}
+	return f
 }
