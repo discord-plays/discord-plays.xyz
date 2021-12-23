@@ -14,13 +14,6 @@ import (
 	"time"
 )
 
-var (
-	//go:embed views/head.go.html
-	headFile string
-	//go:embed views/index.go.html
-	indexFile string
-)
-
 type DiscordPlaysHttp struct {
 	httpSrv *http.Server
 }
@@ -45,21 +38,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 	linkGithub := os.Getenv("LINK_GITHUB")
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
-		dpHttp.generatePage(rw, "Discord Plays", indexFile, nil)
-	})
-	router.HandleFunc("/discord", func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("Location", linkDiscord)
-		rw.WriteHeader(http.StatusTemporaryRedirect)
-	})
-	router.HandleFunc("/notion", func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("Location", linkNotion)
-		rw.WriteHeader(http.StatusTemporaryRedirect)
-	})
-	router.HandleFunc("/github", func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("Location", linkGithub)
-		rw.WriteHeader(http.StatusTemporaryRedirect)
-	})
+	SetupDiscordPlaysRoot(dpHttp, router.Host(os.Getenv("ROOT_DOMAIN")).Subrouter(), linkDiscord, linkNotion, linkGithub)
 
 	dpHttp.httpSrv = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
@@ -78,7 +57,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, title, templatePage string, data interface{}) {
 	rw.Header().Add("Content-Type", "text/html")
 	rw.Write([]byte("<!DOCTYPE html><html><head>"))
-	fillPage(rw, "head", headFile, struct{ Title string }{Title: title})
+	fillPage(rw, "head", getTemplateFileByName("head.go.html"), struct{ Title string }{Title: title})
 	rw.Write([]byte("</head><body>"))
 	fillPage(rw, "body", templatePage, data)
 	rw.Write([]byte("</body></html>"))
