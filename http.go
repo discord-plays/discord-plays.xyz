@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/gorilla/mux"
 	"html/template"
 	"io"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type DiscordPlaysHttp struct {
@@ -58,7 +59,7 @@ func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, title, temp
 	rw.Header().Add("Content-Type", "text/html")
 	rw.Write([]byte("<!DOCTYPE html><html><head>"))
 	fillPage(rw, "head", getTemplateFileByName("head.go.html"), struct{ Title string }{Title: title})
-	rw.Write([]byte("</head><body>"))
+	rw.Write([]byte("</head><body class=\"bg-dark\">"))
 	fillPage(rw, "body", templatePage, data)
 	rw.Write([]byte("</body></html>"))
 }
