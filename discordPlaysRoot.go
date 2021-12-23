@@ -21,4 +21,5 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		rw.Header().Set("Location", linkGithub)
 		rw.WriteHeader(http.StatusTemporaryRedirect)
 	})
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.FS(getAssetsFilesystem()))))
 }

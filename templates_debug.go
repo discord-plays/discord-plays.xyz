@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 )
@@ -14,4 +15,8 @@ func getTemplateFileByName(a string) string {
 		return fmt.Sprintf("Error loading template file: '%s'", err.Error())
 	}
 	return string(b)
+}
+
+func getAssetsFilesystem() fs.FS {
+	return os.DirFS(path.Join("assets"))
 }

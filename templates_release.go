@@ -11,6 +11,8 @@ import (
 var (
 	//go:embed views
 	viewsFiles embed.FS
+	//go:embed assets
+	assetsFiles embed.FS
 )
 
 func getTemplateFileByName(a string) string {
@@ -19,4 +21,8 @@ func getTemplateFileByName(a string) string {
 		return fmt.Sprintf("Error loading template file: '%s'", err.Error())
 	}
 	return string(b)
+}
+
+func getAssetsFilesystem() embed.FS {
+	return assetsFiles
 }
