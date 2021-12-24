@@ -1,0 +1,24 @@
+<div class="container marketing text-light">
+    <!--featurettes-->
+    {{with .Project}}
+        <div class="row featurette" style="margin-top: 2rem;">
+            <div class="col-md-7" style="padding-top: 2.5rem;">
+                <h1 class="featurette-heading">
+                    Discord Plays {{.Name}}:
+                    <span class="text-muted">{{.SubText}}</span>
+                </h1>
+                <p class="lead">{{.Description}}</p>
+                <button type="button" class="btn btn-light" onclick="location.href='{{.Invite}}'">Invite to server
+                </button>
+                <button type="button" class="btn btn-light" onclick="location.href='{{$.ProjectUrl}}/notion'">Notion
+                </button>
+                <button type="button" class="btn btn-light" onclick="location.href='{{$.ProjectUrl}}/github'">Github
+                </button>
+            </div>
+            <div class="col-md-5">
+                <img class="featurette-image img-fluid mx-auto" width="500" height="500"
+                     src="{{$.ProjectUrl}}/assets/logo.png" alt="Discord Plays {{.ImageAlt}}"/>
+            </div>
+        </div>
+    {{end}}
+</div>

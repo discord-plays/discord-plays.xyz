@@ -3,11 +3,22 @@ package main
 import (
 	"github.com/gorilla/mux"
 	"net/http"
+	neutered_filesystem "tea.melonie54.xyz/sean/neutered-filesystem"
 )
 
 func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDiscord, linkNotion, linkGithub string) {
 	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
-		dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("index.go.html"), nil)
+		dpHttp.rwSync.RLock()
+		defer dpHttp.rwSync.RUnlock()
+		dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("index.go.html"), struct {
+			Projects      []*ProjectItem
+			Protocol      string
+			ProjectDomain string
+		}{
+			Projects:      dpHttp.projectData,
+			Protocol:      dpHttp.protocol,
+			ProjectDomain: dpHttp.projectDomain,
+		})
 	})
 	router.HandleFunc("/discord", func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Location", linkDiscord)
@@ -21,5 +32,5 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		rw.Header().Set("Location", linkGithub)
 		rw.WriteHeader(http.StatusTemporaryRedirect)
 	})
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.FS(getAssetsFilesystem()))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neutered_filesystem.New(http.FS(getAssetsFilesystem())))))
 }
