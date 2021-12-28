@@ -1,7 +1,10 @@
 PORT=8080
+PROTOCOL=http
 
 LINK_DISCORD=https://discord.gg/...
 LINK_NOTION=https://notion.so/...
 LINK_GITHUB=https://github.com/...
 
-ROOT_DOMAIN=127.0.0.1:8080
+ROOT_DOMAIN=dp.test:8080
+ADMIN_DOMAIN=admin.dp.test:8080
+PROJECT_DOMAIN=.dp.test:8080
