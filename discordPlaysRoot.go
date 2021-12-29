@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 	neutered_filesystem "tea.melonie54.xyz/sean/neutered-filesystem"
 )
 
@@ -19,6 +20,9 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 			Protocol:      dpHttp.protocol,
 			ProjectDomain: dpHttp.projectDomain,
 		})
+	})
+	router.HandleFunc("/about", func(rw http.ResponseWriter, req *http.Request) {
+		dpHttp.generatePage(rw, "About", getTemplateFileByName("about.go.html"), nil)
 	})
 	router.HandleFunc("/discord", func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Location", linkDiscord)
