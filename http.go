@@ -154,12 +154,20 @@ func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, title, temp
 		},
 	}
 
-	os.Getenv("a")
+	dpHttp.rwSync.RLock()
+	defer dpHttp.rwSync.RUnlock()
+
 	rw.Header().Add("Content-Type", "text/html")
 	rw.Write([]byte("<!DOCTYPE html><html><head>"))
 	fillPage(rw, "head", getTemplateFileByName("head.go.html"), struct{ Title string }{Title: title})
 	rw.Write([]byte("</head><body class=\"bg-dark\">"))
-	fillPage(rw, "nav", getTemplateFileByName("nav.go.html"), struct{ RootDomain template.HTMLAttr }{RootDomain: template.HTMLAttr(fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain))})
+	fillPage(rw, "nav", getTemplateFileByName("nav.go.html"), struct {
+		RootDomain template.HTMLAttr
+		Projects   []*ProjectItem
+	}{
+		RootDomain: template.HTMLAttr(fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain)),
+		Projects:   dpHttp.projectData,
+	})
 	fillPageWithFuncMap(rw, "body", templatePage, funcMap, data)
 	rw.Write([]byte("</body></html>"))
 }
