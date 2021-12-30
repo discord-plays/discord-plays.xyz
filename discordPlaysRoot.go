@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -20,6 +21,21 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 			Protocol:      dpHttp.protocol,
 			ProjectDomain: dpHttp.projectDomain,
 		})
+	})
+	router.HandleFunc("/bots/{botName}", func(rw http.ResponseWriter, req *http.Request) {
+		vars := mux.Vars(req)
+		botName := vars["botName"]
+		if b, ok := getProjectItemFromName(dpHttp, botName); ok {
+			dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("project.go.html"), struct {
+				Project    *ProjectItem
+				ProjectUrl string
+			}{
+				Project:    b,
+				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.protocol, b.Code, dpHttp.projectDomain),
+			})
+		} else {
+			router.NotFoundHandler.ServeHTTP(rw, req)
+		}
 	})
 	router.HandleFunc("/about", func(rw http.ResponseWriter, req *http.Request) {
 		dpHttp.generatePage(rw, "About", getTemplateFileByName("about.go.html"), nil)

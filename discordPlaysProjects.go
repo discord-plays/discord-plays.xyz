@@ -12,13 +12,8 @@ import (
 func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
 		if b, ok := getProjectItem(dpHttp, req); ok {
-			dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("project.go.html"), struct {
-				Project    *ProjectItem
-				ProjectUrl string
-			}{
-				Project:    b,
-				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.protocol, b.Code, dpHttp.projectDomain),
-			})
+			rw.Header().Set("Location", fmt.Sprintf("%s://%s/bots/%s", dpHttp.protocol, dpHttp.rootDomain, b.Code))
+			rw.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)
 		}
@@ -55,9 +50,13 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 
 func getProjectItem(dpHttp *DiscordPlaysHttp, req *http.Request) (*ProjectItem, bool) {
 	a := getFirstPartOfHost(req.Host)
+	return getProjectItemFromName(dpHttp, a)
+}
+
+func getProjectItemFromName(dpHttp *DiscordPlaysHttp, name string) (*ProjectItem, bool) {
 	dpHttp.rwSync.RLock()
 	defer dpHttp.rwSync.RUnlock()
-	b, ok := dpHttp.projectItems[a]
+	b, ok := dpHttp.projectItems[name]
 	return b, ok
 }
 
