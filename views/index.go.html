@@ -20,9 +20,7 @@
                     <span class="text-muted">{{.SubText}}</span>
                 </h1>
                 <p class="lead">{{.Description}}</p>
-                <button type="button" class="btn btn-primary"
-                        onclick="location.href='{{$.Protocol}}://{{.Code}}{{$.ProjectDomain}}'">More info
-                </button>
+                <a type="button" class="btn btn-primary" href="/bots/{{.Code}}">More info</a>
             </div>
             {{if not (mod $i 2)}}
                 <div class="col-md-5">

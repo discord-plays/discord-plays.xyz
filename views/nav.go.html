@@ -2,12 +2,11 @@
     <div class="container-fluid">
         <!--Logo + Name-->
         <a class="navbar-brand" href="{{.RootDomain}}">
-            <img src="{{.RootDomain}}/assets/logo.png" width="30" height="30" class="d-inline-block align-top"/>
+            <img src="{{.RootDomain}}/assets/logo.png" width="30px" height="30px" class="d-inline-block align-top"/>
             Discord Plays
         </a>
         <!--Toggle Button-->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
-                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <!--Page Nav-->
@@ -17,17 +16,17 @@
                     <a class="nav-link" aria-current="page" href="{{.RootDomain}}">Home</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="false">Bots</a>
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Bots</a>
                     <ul class="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
                         {{range $i, $a := .Projects}}
                             <li class="dropdown-item bg-dark">
-                                <a class="nav-link" aria-current="page" href="{{$.RootDomain}}/bots/{{.Code}}">
-                                    {{.Name}}
-                                </a>
+                                <a class="nav-link" aria-current="page" href="{{$.RootDomain}}/bots/{{.Code}}">{{.Name}}</a>
                             </li>
                         {{end}}
                     </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="{{.RootDomain}}/github">Github</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" aria-current="page" href="{{.RootDomain}}/about">About</a>

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 	"log"
 	"os"
 	"os/signal"
@@ -19,6 +21,12 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	log.Println("[Main Loading database")
+	db, err := gorm.Open(sqlite.Open(".data/db.sqlite"), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Unable to load database (\".data/db.sqlite\")")
+	}
+
 	httpPort, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatal("Error getting PORT")
@@ -26,7 +34,8 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	dpHttp := &DiscordPlaysHttp{}
+	dpHttp := &DiscordPlaysHttp{db: db}
+	db.AutoMigrate(&ProjectItem{})
 
 	//=====================
 	// Safe shutdown

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	_ "embed"
-	"encoding/csv"
 	"fmt"
+	"gorm.io/gorm"
 	"html/template"
 	"io"
 	"log"
@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/jszwec/csvutil"
 )
 
 type DiscordPlaysHttp struct {
+	db            *gorm.DB
 	httpSrv       *http.Server
 	projectData   []*ProjectItem
 	projectItems  map[string]*ProjectItem
@@ -30,17 +30,6 @@ type DiscordPlaysHttp struct {
 	projectDomain string
 }
 
-type ProjectItem struct {
-	Code        string
-	Name        string
-	SubText     string
-	Description string
-	Invite      string
-	ImageAlt    string
-	Notion      string
-	Github      string
-}
-
 func (dpHttp *DiscordPlaysHttp) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -49,67 +38,47 @@ func (dpHttp *DiscordPlaysHttp) Shutdown() {
 
 func (dpHttp *DiscordPlaysHttp) StartupHttp(port int, wg *sync.WaitGroup) {
 	dpHttp.rwSync = &sync.RWMutex{}
-	dpHttp.projectHeader = make([]string, 0)
+	dpHttp.rwSync.Lock()
 	dpHttp.projectData = make([]*ProjectItem, 0)
 	dpHttp.projectItems = make(map[string]*ProjectItem)
+	dpHttp.rwSync.Unlock()
 
-	h, err := csvutil.Header(ProjectItem{}, "csv")
-	if err != nil {
-		log.Fatal(err)
-	}
-	dpHttp.projectHeader = h
-
-	dpHttp.loadProjectCsv()
+	dpHttp.loadProjectsFromDB()
 
 	wg.Add(1)
 	log.Printf("[Http::Bind] Starting HTTP server on %d\n", port)
 	go dpHttp.startHttpServer(port, wg)
 }
 
-func (dpHttp *DiscordPlaysHttp) loadProjectCsv() {
-	f, err := os.OpenFile("projects.csv", os.O_RDONLY, 0666)
-	if err != nil {
-		log.Printf("Failed to open 'projects.csv': %s\n", err.Error())
-		return
-	}
-	r := csv.NewReader(f)
-	d, err := csvutil.NewDecoder(r, dpHttp.projectHeader...)
-	if err != nil {
-		log.Printf("Failed to create csv decoder: %s\n", err.Error())
-		return
-	}
-
+func (dpHttp *DiscordPlaysHttp) loadProjectsFromDB() {
 	dpHttp.rwSync.Lock()
 	defer dpHttp.rwSync.Unlock()
 
-	projects := make([]*ProjectItem, 0)
+	var projects []*ProjectItem
+	dpHttp.db.Model(&ProjectItem{}).Find(&projects)
+
 	projectMap := make(map[string]*ProjectItem)
-	isFirst := true
-	for {
-		var p ProjectItem
-		if err := d.Decode(&p); err == io.EOF {
-			break
-		} else if err != nil {
-			log.Printf("Failed to decode csv item: %s\n", err.Error())
-			continue
-		}
-		if isFirst {
-			isFirst = false
-			continue
-		}
+	for _, p := range projects {
+		emptyStringIfNull(p.Code)
+		emptyStringIfNull(p.Name)
+		emptyStringIfNull(p.SubText)
+		emptyStringIfNull(p.Description)
+		emptyStringIfNull(p.Invite)
+		emptyStringIfNull(p.ImageAlt)
+		emptyStringIfNull(p.Notion)
+		emptyStringIfNull(p.Github)
 
 		// Trim spaces lol
-		p.Code = strings.TrimSpace(p.Code)
-		p.Name = strings.TrimSpace(p.Name)
-		p.SubText = strings.TrimSpace(p.SubText)
-		p.Description = strings.TrimSpace(p.Description)
-		p.Invite = strings.TrimSpace(p.Invite)
-		p.ImageAlt = strings.TrimSpace(p.ImageAlt)
-		p.Notion = strings.TrimSpace(p.Notion)
-		p.Github = strings.TrimSpace(p.Github)
+		*p.Code = strings.TrimSpace(*p.Code)
+		*p.Name = strings.TrimSpace(*p.Name)
+		*p.SubText = strings.TrimSpace(*p.SubText)
+		*p.Description = strings.TrimSpace(*p.Description)
+		*p.Invite = strings.TrimSpace(*p.Invite)
+		*p.ImageAlt = strings.TrimSpace(*p.ImageAlt)
+		*p.Notion = strings.TrimSpace(*p.Notion)
+		*p.Github = strings.TrimSpace(*p.Github)
 
-		projects = append(projects, &p)
-		projectMap[p.Code] = &p
+		projectMap[*p.Code] = p
 	}
 
 	dpHttp.projectData = projects

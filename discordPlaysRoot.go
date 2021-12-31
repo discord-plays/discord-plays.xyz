@@ -31,7 +31,7 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 				ProjectUrl string
 			}{
 				Project:    b,
-				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.protocol, b.Code, dpHttp.projectDomain),
+				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.protocol, *b.Code, dpHttp.projectDomain),
 			})
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)

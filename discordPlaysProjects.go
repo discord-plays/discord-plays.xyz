@@ -6,13 +6,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	neutered_filesystem "tea.melonie54.xyz/sean/neutered-filesystem"
+	"tea.melonie54.xyz/sean/neutered-filesystem"
 )
 
 func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
 		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Location", fmt.Sprintf("%s://%s/bots/%s", dpHttp.protocol, dpHttp.rootDomain, b.Code))
+			rw.Header().Set("Location", fmt.Sprintf("%s://%s/bots/%s", dpHttp.protocol, dpHttp.rootDomain, *b.Code))
 			rw.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)
@@ -20,7 +20,7 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	})
 	router.HandleFunc("/notion", func(rw http.ResponseWriter, req *http.Request) {
 		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Location", b.Notion)
+			rw.Header().Set("Location", *b.Notion)
 			rw.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)
@@ -28,7 +28,7 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	})
 	router.HandleFunc("/github", func(rw http.ResponseWriter, req *http.Request) {
 		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Location", b.Github)
+			rw.Header().Set("Location", *b.Github)
 			rw.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)
@@ -37,7 +37,7 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	router.HandleFunc("/assets/logo.png", func(rw http.ResponseWriter, req *http.Request) {
 		if b, ok := getProjectItem(dpHttp, req); ok {
 			rw.Header().Set("Content-Type", "image/png")
-			f, err := getAssetsFilesystem().Open(fmt.Sprintf("projects/%s.png", b.Code))
+			f, err := getAssetsFilesystem().Open(fmt.Sprintf("projects/%s.png", *b.Code))
 			if err != nil {
 				rw.WriteHeader(500)
 			} else {
