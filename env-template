@@ -6,5 +6,6 @@ LINK_NOTION=https://notion.so/...
 LINK_GITHUB=https://github.com/...
 
 ROOT_DOMAIN=dp.test:8080
+ID_DOMAIN=id.dp.test:8080
 ADMIN_DOMAIN=admin.dp.test:8080
 PROJECT_DOMAIN=.dp.test:8080

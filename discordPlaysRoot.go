@@ -10,9 +10,10 @@ import (
 
 func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDiscord, linkNotion, linkGithub string) {
 	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
+		_, dpUser, _ := dpHttp.dpSess.CheckLogin(req)
 		dpHttp.rwSync.RLock()
 		defer dpHttp.rwSync.RUnlock()
-		dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("index.go.html"), struct {
+		dpHttp.generatePage(rw, dpUser, "Discord Plays", getTemplateFileByName("index.go.html"), struct {
 			Projects      []*ProjectItem
 			Protocol      string
 			ProjectDomain string
@@ -23,10 +24,11 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		})
 	})
 	router.HandleFunc("/bots/{botName}", func(rw http.ResponseWriter, req *http.Request) {
+		_, dpUser, _ := dpHttp.dpSess.CheckLogin(req)
 		vars := mux.Vars(req)
 		botName := vars["botName"]
 		if b, ok := getProjectItemFromName(dpHttp, botName); ok {
-			dpHttp.generatePage(rw, "Discord Plays", getTemplateFileByName("project.go.html"), struct {
+			dpHttp.generatePage(rw, dpUser, "Discord Plays", getTemplateFileByName("project.go.html"), struct {
 				Project    *ProjectItem
 				ProjectUrl string
 			}{
@@ -38,7 +40,8 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		}
 	})
 	router.HandleFunc("/about", func(rw http.ResponseWriter, req *http.Request) {
-		dpHttp.generatePage(rw, "About", getTemplateFileByName("about.go.html"), nil)
+		_, dpUser, _ := dpHttp.dpSess.CheckLogin(req)
+		dpHttp.generatePage(rw, dpUser, "About", getTemplateFileByName("about.go.html"), nil)
 	})
 	router.HandleFunc("/discord", func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Location", linkDiscord)

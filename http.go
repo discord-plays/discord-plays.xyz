@@ -4,6 +4,9 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/ravener/discord-oauth2"
+	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 	"html/template"
 	"io"
@@ -13,8 +16,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 type DiscordPlaysHttp struct {
@@ -24,10 +25,14 @@ type DiscordPlaysHttp struct {
 	projectItems  map[string]*ProjectItem
 	projectHeader []string
 	rwSync        *sync.RWMutex
-	rootDomain    string
-	adminDomain   string
 	protocol      string
+	rootDomain    string
+	idDomain      string
+	adminDomain   string
 	projectDomain string
+	oAuthConf     *oauth2.Config
+	dpSess        *DiscordPlaysSessions
+	dpAdmins      []string
 }
 
 func (dpHttp *DiscordPlaysHttp) Shutdown() {
@@ -90,6 +95,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 
 	dpHttp.protocol = os.Getenv("PROTOCOL")
 	dpHttp.rootDomain = os.Getenv("ROOT_DOMAIN")
+	dpHttp.idDomain = os.Getenv("ID_DOMAIN")
 	dpHttp.adminDomain = os.Getenv("ADMIN_DOMAIN")
 	dpHttp.projectDomain = os.Getenv("PROJECT_DOMAIN")
 
@@ -97,10 +103,36 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 	linkNotion := os.Getenv("LINK_NOTION")
 	linkGithub := os.Getenv("LINK_GITHUB")
 
+	discordClient := os.Getenv("DISCORD_CLIENT")
+	discordSecret := os.Getenv("DISCORD_SECRET")
+
+	dpHttp.dpAdmins = strings.Split(os.Getenv("DP_ADMINS"), ",")
+
+	dpHttp.oAuthConf = &oauth2.Config{
+		RedirectURL:  fmt.Sprintf("%s://%s/auth/callback", dpHttp.protocol, dpHttp.idDomain),
+		ClientID:     discordClient,
+		ClientSecret: discordSecret,
+		Scopes:       []string{discord.ScopeIdentify},
+		Endpoint:     discord.Endpoint,
+	}
+	dpHttp.dpSess = NewDiscordPlaysSessions()
+
 	router := mux.NewRouter()
 	SetupDiscordPlaysRoot(dpHttp, router.Host(dpHttp.rootDomain).Subrouter(), linkDiscord, linkNotion, linkGithub)
+	SetupDiscordPlaysId(dpHttp, router.Host(dpHttp.idDomain).Subrouter())
 	SetupDiscordPlaysAdmin(dpHttp, router.Host(dpHttp.adminDomain).Subrouter())
 	SetupDiscordPlaysProjects(dpHttp, router)
+	router.HandleFunc("/login", func(rw http.ResponseWriter, req *http.Request) {
+		sess, _, _ := dpHttp.dpSess.CheckLogin(req)
+		sess.Values["RedirectDomain"] = req.Host
+		sess.Save(req, rw)
+		http.Redirect(rw, req, fmt.Sprintf("%s://%s/login", dpHttp.protocol, dpHttp.idDomain), http.StatusTemporaryRedirect)
+	})
+	router.HandleFunc("/logout", func(rw http.ResponseWriter, req *http.Request) {
+		sess, _, _ := dpHttp.dpSess.CheckLogin(req)
+		delete(sess.Values, "dpUser")
+		sess.Save(req, rw)
+	})
 
 	dpHttp.httpSrv = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
@@ -116,7 +148,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 	}
 }
 
-func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, title, templatePage string, data interface{}) {
+func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, dpUser *discordMeBody, title, templatePage string, data interface{}) {
 	funcMap := template.FuncMap{
 		"mod": func(i, j int) int {
 			return i % j
@@ -126,16 +158,22 @@ func (dpHttp *DiscordPlaysHttp) generatePage(rw http.ResponseWriter, title, temp
 	dpHttp.rwSync.RLock()
 	defer dpHttp.rwSync.RUnlock()
 
+	dpMeUser := convertToDpBody(dpHttp, dpUser)
+
 	rw.Header().Add("Content-Type", "text/html")
 	rw.Write([]byte("<!DOCTYPE html><html><head>"))
 	fillPage(rw, "head", getTemplateFileByName("head.go.html"), struct{ Title string }{Title: title})
 	rw.Write([]byte("</head><body class=\"bg-dark\">"))
 	fillPage(rw, "nav", getTemplateFileByName("nav.go.html"), struct {
-		RootDomain template.HTMLAttr
-		Projects   []*ProjectItem
+		RootDomain       template.HTMLAttr
+		IdDomain         template.HTMLAttr
+		DiscordPlaysUser *discordPlaysUserBody
+		Projects         []*ProjectItem
 	}{
-		RootDomain: template.HTMLAttr(fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain)),
-		Projects:   dpHttp.projectData,
+		RootDomain:       template.HTMLAttr(fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain)),
+		IdDomain:         template.HTMLAttr(fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.idDomain)),
+		DiscordPlaysUser: dpMeUser,
+		Projects:         dpHttp.projectData,
 	})
 	fillPageWithFuncMap(rw, "body", templatePage, funcMap, data)
 	rw.Write([]byte("</body></html>"))

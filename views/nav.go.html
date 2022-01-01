@@ -33,5 +33,136 @@
                 </li>
             </ul>
         </div>
+        <!-- Login button -->
+        <a id="loginBtn" class="btn btn-primary" role="button" data-bs-toggle="modal" data-bs-target="#loginTosModal">Login</a>
+        <div id="loginMenu" class="dropdown" style="display:none">
+            <a class="dropdown-toggle btn btn-primary" id="loginMenuDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <img id="loginMenuAvatar" style="width:24px;height:24px">
+                <span id="loginMenuName">Wumpus</span>
+            </a>
+            <ul class="dropdown-menu bg-dark">
+                <li class="bg-dark">
+                    <a class="dropdown-item bg-dark text-light" style="cursor:pointer;" aria-current="page" onclick="logoutOfDiscord();">Logout</a>
+                </li>
+            </ul>
+        </div>
     </div>
 </nav>
+
+<!-- Modal -->
+<div class="modal fade" id="loginTosModal" tabindex="-1" aria-labelledby="loginTosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header text-light">
+                <h5 class="modal-title" id="loginTosModalLabel">Login with Discord</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-light">
+                <p>By logging into this website you give permission for your Discord ID and Discord tag to be saved with your session to customise pages for you and to allow you to access play forms to start a game with customisations.</p>
+                <p>Administrators of this site are able to ban your account from using the site at anytime if you don't use it in a sensible manner. This will unfortunately make all Discord Plays bots stop interacting with your account.</p>
+                <p>Enough with the legal nonsense... click below to login.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="loginWithDiscordStage2();">Login with Discord</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    window.aa_discordplays_user = {{.DiscordPlaysUser}};
+
+    function loginWithDiscordStage2() {
+        popupCenterScreen('/login', 'Login with Discord', 800, 800, false);
+    }
+
+    function logoutOfDiscord() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                window.aa_discordplays_user = null;
+                check_user();
+            }
+        };
+        xhttp.open("POST", "/logout", true);
+        xhttp.send();
+    }
+
+    window.addEventListener("load", function () {
+        check_user();
+    });
+
+    function check_user() {
+        let is_logged_in = window.aa_discordplays_user !== null;
+        showOrHideWithBool("loginBtn", !is_logged_in);
+        showOrHideWithBool("loginMenu", is_logged_in);
+
+        if (window.aa_discordplays_user !== null) {
+            document.getElementById("loginMenuName").textContent = window.aa_discordplays_user.username;
+            document.getElementById("loginMenuAvatar").src = window.aa_discordplays_user.avatar;
+        } else {
+            document.getElementById("loginMenuName").textContent = "Wumpus";
+            document.getElementById("loginMenuAvatar").src = "";
+        }
+    }
+
+    function showOrHideWithBool(id, v) {
+        var el = document.getElementById(id);
+        console.log(id);
+        el.style.display = v ? "inline-block" : "none";
+    }
+
+    window.onmessage = function (event) {
+        if (event.origin !== "{{$.IdDomain}}") return;
+        if (isObject(event.data)) {
+            console.log(event.data);
+            if (isObject(event.data.user)) {
+                let d = Object.assign({username: null, id: null, avatar: null, admin: false}, event.data.user);
+                if (d.username === null || d.id === null || d.avatar === null) {
+                    alert("Failed to log user in: the login data is structured correctly but probably corrupted");
+                    return;
+                }
+                window.aa_discordplays_user = d;
+                check_user();
+                return;
+            }
+        }
+        alert("Failed to log user in: the login data was probably corrupted");
+    }
+
+    // So much easier to ask stackoverflow instead of using my brain
+    // https://stackoverflow.com/a/51458052/10719432
+    function isObject(obj) {
+        return obj != null && obj.constructor.name === "Object"
+    }
+
+    // OMG gotta love stackoverflow
+    // https://stackoverflow.com/a/65739440/10719432
+    function popupCenterScreen(url, title, w, h, focus) {
+        const top = (screen.availHeight - h) / 4, left = (screen.availWidth - w) / 2;
+        const popup = openWindow(url, title, `scrollbars=yes,width=${w},height=${h},top=${top},left=${left}`);
+        if (focus === true && window.focus) popup.focus();
+        return popup;
+    }
+
+    function openWindow(url, winnm, options) {
+        var wTop = firstAvailableValue([window.screen.availTop, window.screenY, window.screenTop, 0]);
+        var wLeft = firstAvailableValue([window.screen.availLeft, window.screenX, window.screenLeft, 0]);
+        var top = 0, left = 0;
+        var result;
+        if ((result = /top=(\d+)/g.exec(options))) top = parseInt(result[1]);
+        if ((result = /left=(\d+)/g.exec(options))) left = parseInt(result[1]);
+        if (options) {
+            options = options.replace("top=" + top, "top=" + (parseInt(top) + wTop));
+            options = options.replace("left=" + left, "left=" + (parseInt(left) + wLeft));
+            w = window.open(url, winnm, options);
+        } else w = window.open(url, winnm);
+        return w;
+    }
+
+    function firstAvailableValue(arr) {
+        for (var i = 0; i < arr.length; i++)
+            if (typeof arr[i] != 'undefined')
+                return arr[i];
+    }
+</script>
