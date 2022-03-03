@@ -9,14 +9,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 const (
-	LoginFrameStart = "<script>window.opener.postMessage({user:"
-	LoginFrameEnd   = "},\"%s://%s\");window.close();</script>"
+	LoginFrameStart = "<!DOCTYPE html><html><head><script>window.opener.postMessage({user:"
+	LoginFrameEnd   = "},\"%s://%s\");window.close();</script></head></html>"
+	CheckFrameStart = "<!DOCTYPE html><html><head><script>window.onload=function(){window.parent.postMessage({user:"
+	CheckFrameEnd   = "},\"%s://%s\");window.addEventListener(\"message\",function(evt){if (evt.origin.endsWith(\"%s\")) {if(evt.data.logout==\"bye\"){console.log(\"logging out\");}}});}</script></head></html>"
 )
 
 type discordMeBody struct {
@@ -39,22 +44,51 @@ func SetupDiscordPlaysId(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 		http.Redirect(rw, req, fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain), http.StatusTemporaryRedirect)
 	})
 	router.HandleFunc("/login", func(rw http.ResponseWriter, req *http.Request) {
+		redirectDomain := req.URL.Query().Get("redirect")
 		sess, _, ok := dpHttp.dpSess.CheckLogin(req)
+		sess.Values["RedirectDomain"] = redirectDomain
+		_ = sess.Save(req, rw)
 		if ok {
-			http.Redirect(rw, req, fmt.Sprintf("%s://%s", dpHttp.protocol, dpHttp.rootDomain), http.StatusTemporaryRedirect)
+			if redirectDomain == "" {
+				redirectDomain = dpHttp.rootDomain
+			}
+			http.Redirect(rw, req, fmt.Sprintf("%s://%s", dpHttp.protocol, redirectDomain), http.StatusTemporaryRedirect)
 			return
 		}
 
 		state := dpHttp.dpSess.GetStateToken(sess)
-		sess.Save(req, rw)
+		_ = sess.Save(req, rw)
 		http.Redirect(rw, req, dpHttp.oAuthConf.AuthCodeURL(state), http.StatusTemporaryRedirect)
+	})
+	router.HandleFunc("/check", func(rw http.ResponseWriter, req *http.Request) {
+		parentDomain := req.URL.Query().Get("parent")
+		_, meBody, ok := dpHttp.dpSess.CheckLogin(req)
+		if ok {
+			dpBody := convertToDpBody(dpHttp, meBody)
+			j, err := json.Marshal(dpBody)
+			if err != nil {
+				rw.WriteHeader(http.StatusInternalServerError)
+				_, _ = rw.Write([]byte(err.Error()))
+				return
+			}
+
+			if parentDomain != dpHttp.rootDomain && !strings.HasSuffix(parentDomain, dpHttp.projectDomain) {
+				parentDomain = dpHttp.rootDomain
+			}
+
+			_, _ = rw.Write([]byte(CheckFrameStart))
+			_, _ = rw.Write(j)
+			_, _ = rw.Write([]byte(fmt.Sprintf(CheckFrameEnd, dpHttp.protocol, parentDomain, dpHttp.projectDomain)))
+			return
+		}
+		_, _ = rw.Write([]byte{})
 	})
 	router.HandleFunc("/auth/callback", func(rw http.ResponseWriter, req *http.Request) {
 		sess, _, ok := dpHttp.dpSess.CheckLogin(req)
 		if !ok {
 			if req.FormValue("state") != dpHttp.dpSess.GetStateToken(sess) {
 				rw.WriteHeader(http.StatusBadRequest)
-				rw.Write([]byte("State does not match."))
+				_, _ = rw.Write([]byte("State does not match."))
 				return
 			}
 			// Step 3: We exchange the code we got for an access token
@@ -63,7 +97,7 @@ func SetupDiscordPlaysId(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 
 			if err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte(err.Error()))
+				_, _ = rw.Write([]byte(err.Error()))
 				return
 			}
 
@@ -73,19 +107,21 @@ func SetupDiscordPlaysId(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 			if err != nil || res.StatusCode != 200 {
 				rw.WriteHeader(http.StatusInternalServerError)
 				if err != nil {
-					rw.Write([]byte(err.Error()))
+					_, _ = rw.Write([]byte(err.Error()))
 				} else {
-					rw.Write([]byte(res.Status))
+					_, _ = rw.Write([]byte(res.Status))
 				}
 				return
 			}
 
-			defer res.Body.Close()
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(res.Body)
 
 			body, err := ioutil.ReadAll(res.Body)
 			if err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte(err.Error()))
+				_, _ = rw.Write([]byte(err.Error()))
 				return
 			}
 
@@ -93,21 +129,25 @@ func SetupDiscordPlaysId(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 			err = json.Unmarshal(body, meBody)
 			if err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte(err.Error()))
+				_, _ = rw.Write([]byte(err.Error()))
 				return
 			}
 			meBody.LoggedInUntil = time.Now().Add(2 * time.Hour)
 			s := new(bytes.Buffer)
 			g := gob.NewEncoder(s)
-			g.Encode(meBody)
-			sess.Values["dpUser"] = s.Bytes()
-			sess.Save(req, rw)
+			err = g.Encode(meBody)
+			if err != nil {
+				sess.Values["dpUser"] = []byte{}
+			} else {
+				sess.Values["dpUser"] = s.Bytes()
+			}
+			_ = sess.Save(req, rw)
 
 			dpBody := convertToDpBody(dpHttp, meBody)
 			j, err := json.Marshal(dpBody)
 			if err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte(err.Error()))
+				_, _ = rw.Write([]byte(err.Error()))
 				return
 			}
 
@@ -116,9 +156,15 @@ func SetupDiscordPlaysId(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 				redirectDomain = redirectableDomain
 			}
 
-			rw.Write([]byte(LoginFrameStart))
-			rw.Write(j)
-			rw.Write([]byte(fmt.Sprintf(LoginFrameEnd, dpHttp.protocol, redirectDomain)))
+			log.Printf("%s :: %s\n", redirectDomain, dpHttp.projectDomain)
+			log.Printf("%s :: %s\n", redirectDomain, dpHttp.rootDomain)
+			if redirectDomain != dpHttp.rootDomain && !strings.HasSuffix(redirectDomain, dpHttp.projectDomain) {
+				redirectDomain = dpHttp.rootDomain
+			}
+
+			_, _ = rw.Write([]byte(LoginFrameStart))
+			_, _ = rw.Write(j)
+			_, _ = rw.Write([]byte(fmt.Sprintf(LoginFrameEnd, dpHttp.protocol, redirectDomain)))
 		}
 	})
 }

@@ -1,7 +1,6 @@
-all:
-	make build-main
+.PHONY: build dev
 
-build-main:
+build:
 	mkdir -p dist/ && go build -o dist/discord-plays-xyz .
 
 dev:

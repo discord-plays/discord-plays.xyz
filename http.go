@@ -123,10 +123,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 	SetupDiscordPlaysAdmin(dpHttp, router.Host(dpHttp.adminDomain).Subrouter())
 	SetupDiscordPlaysProjects(dpHttp, router)
 	router.HandleFunc("/login", func(rw http.ResponseWriter, req *http.Request) {
-		sess, _, _ := dpHttp.dpSess.CheckLogin(req)
-		sess.Values["RedirectDomain"] = req.Host
-		sess.Save(req, rw)
-		http.Redirect(rw, req, fmt.Sprintf("%s://%s/login", dpHttp.protocol, dpHttp.idDomain), http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, fmt.Sprintf("%s://%s/login?redirect=%s", dpHttp.protocol, dpHttp.idDomain, req.Host), http.StatusTemporaryRedirect)
 	})
 	router.HandleFunc("/logout", func(rw http.ResponseWriter, req *http.Request) {
 		sess, _, _ := dpHttp.dpSess.CheckLogin(req)

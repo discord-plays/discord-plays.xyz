@@ -71,6 +71,7 @@
 </div>
 <script>
     window.aa_discordplays_user = {{.DiscordPlaysUser}};
+    window.apiFrame = null;
 
     function loginWithDiscordStage2() {
         popupCenterScreen('/login', 'Login with Discord', 800, 800, false);
@@ -86,11 +87,22 @@
         };
         xhttp.open("POST", "/logout", true);
         xhttp.send();
+        if (apiFrame != null) {
+            apiFrame.postMessage({logout:"bye"});
+        }
     }
 
     window.addEventListener("load", function () {
+        check_id_domain();
         check_user();
     });
+
+    function check_id_domain() {
+        var f = document.createElement("iframe");
+        f.src = "{{.IdDomain}}/check?parent="+location.host
+        document.body.appendChild(f);
+        window.apiFrame = f;
+    }
 
     function check_user() {
         let is_logged_in = window.aa_discordplays_user !== null;

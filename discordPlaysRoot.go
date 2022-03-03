@@ -28,7 +28,7 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		vars := mux.Vars(req)
 		botName := vars["botName"]
 		if b, ok := getProjectItemFromName(dpHttp, botName); ok {
-			dpHttp.generatePage(rw, dpUser, "Discord Plays", getTemplateFileByName("project.go.html"), struct {
+			dpHttp.generatePage(rw, dpUser, "Discord Plays "+*b.Name, getTemplateFileByName("project.go.html"), struct {
 				Project    *ProjectItem
 				ProjectUrl string
 			}{
