@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	neuteredFilesystem "code.mrmelon54.xyz/sean/neutered-filesystem"
 	"github.com/gorilla/mux"
-	neutered_filesystem "tea.melonie54.xyz/sean/neutered-filesystem"
 )
 
 func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDiscord, linkNotion, linkGithub string) {
@@ -55,5 +55,5 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		rw.Header().Set("Location", linkGithub)
 		rw.WriteHeader(http.StatusTemporaryRedirect)
 	})
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neutered_filesystem.New(http.FS(getAssetsFilesystem())))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neuteredFilesystem.New(http.FS(getAssetsFilesystem())))))
 }

@@ -11,7 +11,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.4
-	tea.melonie54.xyz/sean/neutered-filesystem v0.0.0-20211224014659-d00e356bc2d0
+	code.mrmelon54.xyz/sean/neutered-filesystem v0.0.0-20220405071656-14d168034263
 )
 
 require (

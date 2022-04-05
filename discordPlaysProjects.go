@@ -1,12 +1,12 @@
 package main
 
 import (
+	"code.mrmelon54.xyz/sean/neutered-filesystem"
 	"fmt"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"strings"
-	"tea.melonie54.xyz/sean/neutered-filesystem"
 )
 
 func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
