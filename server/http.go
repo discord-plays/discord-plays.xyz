@@ -137,6 +137,7 @@ func (dpHttp *DiscordPlaysHttp) startHttpServer(port int, wg *sync.WaitGroup) {
 		delete(sess.Values, "dpUser")
 		_ = sess.Save(req, rw)
 	})
+	router.NotFoundHandler = http.NotFoundHandler()
 
 	dpHttp.httpSrv = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
