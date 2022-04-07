@@ -1,7 +1,9 @@
-package main
+package server
 
 import (
 	"fmt"
+	"github.com/discord-plays/website/res"
+	"github.com/discord-plays/website/structure"
 	"net/http"
 
 	neuteredFilesystem "code.mrmelon54.xyz/sean/neutered-filesystem"
@@ -13,14 +15,14 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		_, dpUser, _ := dpHttp.dpSess.CheckLogin(req)
 		dpHttp.rwSync.RLock()
 		defer dpHttp.rwSync.RUnlock()
-		dpHttp.generatePage(rw, dpUser, "Discord Plays", getTemplateFileByName("index.go.html"), struct {
-			Projects      []*ProjectItem
+		dpHttp.generatePage(rw, dpUser, "Discord Plays", res.GetTemplateFileByName("index.go.html"), struct {
+			Projects      []*structure.ProjectItem
 			Protocol      string
 			ProjectDomain string
 		}{
 			Projects:      dpHttp.projectData,
-			Protocol:      dpHttp.protocol,
-			ProjectDomain: dpHttp.projectDomain,
+			Protocol:      dpHttp.Protocol,
+			ProjectDomain: dpHttp.Domain.ProjectDomain,
 		})
 	})
 	router.HandleFunc("/bots/{botName}", func(rw http.ResponseWriter, req *http.Request) {
@@ -28,12 +30,12 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		vars := mux.Vars(req)
 		botName := vars["botName"]
 		if b, ok := getProjectItemFromName(dpHttp, botName); ok {
-			dpHttp.generatePage(rw, dpUser, "Discord Plays "+*b.Name, getTemplateFileByName("project.go.html"), struct {
-				Project    *ProjectItem
+			dpHttp.generatePage(rw, dpUser, "Discord Plays "+*b.Name, res.GetTemplateFileByName("project.go.html"), struct {
+				Project    *structure.ProjectItem
 				ProjectUrl string
 			}{
 				Project:    b,
-				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.protocol, *b.Code, dpHttp.projectDomain),
+				ProjectUrl: fmt.Sprintf("%s://%s%s", dpHttp.Protocol, *b.Code, dpHttp.Domain.ProjectDomain),
 			})
 		} else {
 			router.NotFoundHandler.ServeHTTP(rw, req)
@@ -41,7 +43,7 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 	})
 	router.HandleFunc("/about", func(rw http.ResponseWriter, req *http.Request) {
 		_, dpUser, _ := dpHttp.dpSess.CheckLogin(req)
-		dpHttp.generatePage(rw, dpUser, "About", getTemplateFileByName("about.go.html"), nil)
+		dpHttp.generatePage(rw, dpUser, "About", res.GetTemplateFileByName("about.go.html"), nil)
 	})
 	router.HandleFunc("/discord", func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Location", linkDiscord)
@@ -55,5 +57,5 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		rw.Header().Set("Location", linkGithub)
 		rw.WriteHeader(http.StatusTemporaryRedirect)
 	})
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neuteredFilesystem.New(http.FS(getAssetsFilesystem())))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neuteredFilesystem.New(http.FS(res.GetAssetsFilesystem())))))
 }

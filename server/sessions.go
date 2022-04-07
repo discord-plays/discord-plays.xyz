@@ -1,8 +1,9 @@
-package main
+package server
 
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/discord-plays/website/structure"
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -23,14 +24,17 @@ func NewDiscordPlaysSessions() *DiscordPlaysSessions {
 	return &DiscordPlaysSessions{store: cookieSessions}
 }
 
-func (dpSess *DiscordPlaysSessions) CheckLogin(req *http.Request) (*sessions.Session, *discordMeBody, bool) {
+func (dpSess *DiscordPlaysSessions) CheckLogin(req *http.Request) (*sessions.Session, *structure.DiscordMeBody, bool) {
 	sess, _ := dpSess.store.Get(req, cookieName)
 	sess.Options.SameSite = http.SameSiteLaxMode
 	if dpUserBytes, ok := sess.Values["dpUser"].([]byte); ok {
 		s := bytes.NewBuffer(dpUserBytes)
 		g := gob.NewDecoder(s)
-		dpUser := &discordMeBody{}
-		g.Decode(dpUser)
+		dpUser := &structure.DiscordMeBody{}
+		err := g.Decode(dpUser)
+		if err != nil {
+			return sess, nil, false
+		}
 
 		if time.Now().Before(dpUser.LoggedInUntil) {
 			return sess, dpUser, true

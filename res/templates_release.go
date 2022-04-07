@@ -1,6 +1,6 @@
 //go:build !debug
 
-package main
+package res
 
 import (
 	"embed"
@@ -10,21 +10,21 @@ import (
 )
 
 var (
-	//go:embed views
+	//go:embed pages
 	viewsFiles embed.FS
 	//go:embed assets
 	assetsFiles embed.FS
 )
 
-func getTemplateFileByName(a string) string {
-	b, err := viewsFiles.ReadFile(path.Join("views", a))
+func GetTemplateFileByName(a string) string {
+	b, err := viewsFiles.ReadFile(path.Join("pages", a))
 	if err != nil {
 		return fmt.Sprintf("Error loading template file: '%s'", err.Error())
 	}
 	return string(b)
 }
 
-func getAssetsFilesystem() fs.FS {
+func GetAssetsFilesystem() fs.FS {
 	f, err := fs.Sub(assetsFiles, "assets")
 	if err != nil {
 		return nil

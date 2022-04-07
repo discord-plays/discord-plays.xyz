@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/discord-plays/website/server"
+	"github.com/discord-plays/website/structure"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -34,8 +36,8 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	dpHttp := &DiscordPlaysHttp{db: db}
-	db.AutoMigrate(&ProjectItem{})
+	dpHttp := server.New(db)
+	check(db.AutoMigrate(&structure.ProjectItem{}))
 
 	//=====================
 	// Safe shutdown
@@ -46,7 +48,7 @@ func main() {
 		<-sigs
 		fmt.Printf("\n")
 		log.Printf("[Main] Attempting safe shutdown\n")
-		dpHttp.Shutdown()
+		_ = dpHttp.Shutdown()
 		wg.Done()
 	}()
 	//
@@ -58,4 +60,10 @@ func main() {
 	log.Printf("[Main] Waiting for close signal\n")
 	wg.Wait()
 	log.Printf("[Main] Goodbye\n")
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

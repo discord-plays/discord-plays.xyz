@@ -5,5 +5,5 @@ build:
 
 dev:
 	mkdir -p dist/
-	go build -tags debug -o dist/discord-plays-xyz .
+	go build -tags debug -o dist/discord-plays-xyz ./cmd/discord-plays-xyz
 	./dist/discord-plays-xyz
