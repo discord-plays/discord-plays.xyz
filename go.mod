@@ -1,8 +1,9 @@
 module github.com/discord-plays/website
 
-go 1.17
+go 1.18
 
 require (
+	code.mrmelon54.xyz/sean/neutered-filesystem v0.0.0-20220405071656-14d168034263
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
@@ -11,7 +12,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.4
-	code.mrmelon54.xyz/sean/neutered-filesystem v0.0.0-20220405071656-14d168034263
 )
 
 require (

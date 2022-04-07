@@ -393,5 +393,3 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
-tea.melonie54.xyz/sean/neutered-filesystem v0.0.0-20211224014659-d00e356bc2d0 h1:zQMDhKvAMz+h0a3u3mWQcNGGw9P1JpRT1o2LtS5ffNI=
-tea.melonie54.xyz/sean/neutered-filesystem v0.0.0-20211224014659-d00e356bc2d0/go.mod h1:xy00ZXDMgDnODTWM7EyemBzipk79w2HGxV+47IlW4AU=
