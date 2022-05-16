@@ -1,7 +1,7 @@
 .PHONY: build dev
 
 build:
-	mkdir -p dist/ && go build -o dist/discord-plays-xyz .
+	mkdir -p dist/ && go build -o dist/discord-plays-xyz ./cmd/discord-plays-xyz
 
 dev:
 	mkdir -p dist/
