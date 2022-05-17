@@ -1,4 +1,4 @@
-<div class="container marketing text-light">
+<div class="container-md marketing text-light" style="margin-bottom: 2rem;">
     <!--featurettes-->
     {{with .Project}}
         <div class="row featurette" style="margin-top: 2rem;">
@@ -12,7 +12,17 @@
                 <a type="button" class="btn btn-primary" href="{{$.ProjectUrl}}/github" target="_blank">Github</a>
             </div>
             <div class="col-md-5">
-                <img class="featurette-image img-fluid mx-auto" width="500" height="500" src="{{$.ProjectUrl}}/assets/logo.png" alt="Discord Plays {{.ImageAlt}}"/>
+                <div class="position-relative">
+                    <img class="featurette-image img-fluid mx-auto" width="500" height="500"
+                         src="{{$.ProjectUrl}}/assets/banner.png"
+                         alt="Discord Plays {{.ImageAlt}}"/>
+                    <div class="position-absolute border border-primary shadow-lg"
+                         style="width:25%;height:25%;top:calc(30% - 12.5%);left:-5%;">
+                        <img class="featurette-image img-fluid mx-auto"
+                             src="{{$.ProjectUrl}}/assets/logo.png"
+                             alt="Discord Plays {{.ImageAlt}}"/>
+                    </div>
+                </div>
             </div>
         </div>
     {{end}}

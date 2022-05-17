@@ -20,33 +20,17 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 			router.NotFoundHandler.ServeHTTP(rw, req)
 		}
 	})
-	router.HandleFunc("/notion", func(rw http.ResponseWriter, req *http.Request) {
-		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Location", *b.Notion)
-			rw.WriteHeader(http.StatusTemporaryRedirect)
-		} else {
-			router.NotFoundHandler.ServeHTTP(rw, req)
-		}
+	redirectToProjectAddress(dpHttp, router, "/invite", func(item *structure.ProjectItem) string {
+		return *item.Invite
 	})
-	router.HandleFunc("/github", func(rw http.ResponseWriter, req *http.Request) {
-		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Location", *b.Github)
-			rw.WriteHeader(http.StatusTemporaryRedirect)
-		} else {
-			router.NotFoundHandler.ServeHTTP(rw, req)
-		}
+	redirectToProjectAddress(dpHttp, router, "/notion", func(item *structure.ProjectItem) string {
+		return *item.Notion
 	})
-	router.HandleFunc("/assets/logo.png", func(rw http.ResponseWriter, req *http.Request) {
-		if b, ok := getProjectItem(dpHttp, req); ok {
-			rw.Header().Set("Content-Type", "image/png")
-			f, err := res.GetAssetsFilesystem().Open(fmt.Sprintf("projects/%s.png", *b.Code))
-			if err != nil {
-				rw.WriteHeader(500)
-			} else {
-				io.Copy(rw, f)
-			}
-		}
+	redirectToProjectAddress(dpHttp, router, "/github", func(item *structure.ProjectItem) string {
+		return *item.Github
 	})
+	imageForProjectAddress(dpHttp, router, "logo")
+	imageForProjectAddress(dpHttp, router, "banner")
 	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neutered_filesystem.New(http.FS(res.GetAssetsFilesystem())))))
 }
 
@@ -68,4 +52,39 @@ func getFirstPartOfHost(a string) string {
 		return s[len(s)-3]
 	}
 	return ""
+}
+
+func redirectToProjectAddress(dpHttp *DiscordPlaysHttp, router *mux.Router, prefix string, cb func(*structure.ProjectItem) string) {
+	router.HandleFunc(prefix, func(rw http.ResponseWriter, req *http.Request) {
+		useProjectItem(dpHttp, req, func(item *structure.ProjectItem) {
+			rw.Header().Set("Location", cb(item))
+			rw.WriteHeader(http.StatusTemporaryRedirect)
+		}, func() {
+			router.NotFoundHandler.ServeHTTP(rw, req)
+		})
+	})
+}
+
+func imageForProjectAddress(dpHttp *DiscordPlaysHttp, router *mux.Router, name string) {
+	router.HandleFunc("/assets/"+name+".png", func(rw http.ResponseWriter, req *http.Request) {
+		useProjectItem(dpHttp, req, func(item *structure.ProjectItem) {
+			rw.Header().Set("Content-Type", "image/png")
+			f, err := res.GetAssetsFilesystem().Open(fmt.Sprintf("projects/%s/%s.png", *item.Code, name))
+			if err != nil {
+				rw.WriteHeader(500)
+			} else {
+				_, _ = io.Copy(rw, f)
+			}
+		}, func() {
+			router.NotFoundHandler.ServeHTTP(rw, req)
+		})
+	})
+}
+
+func useProjectItem(dpHttp *DiscordPlaysHttp, req *http.Request, good func(item *structure.ProjectItem), bad func()) {
+	if b, ok := getProjectItem(dpHttp, req); ok {
+		good(b)
+	} else {
+		bad()
+	}
 }
