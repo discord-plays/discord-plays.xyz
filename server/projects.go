@@ -1,7 +1,7 @@
 package server
 
 import (
-	"code.mrmelon54.xyz/sean/neutered-filesystem"
+	"code.mrmelon54.com/melon/neutered-filesystem"
 	"fmt"
 	"github.com/discord-plays/website/res"
 	"github.com/discord-plays/website/structure"

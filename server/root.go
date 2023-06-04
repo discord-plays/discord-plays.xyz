@@ -6,7 +6,7 @@ import (
 	"github.com/discord-plays/website/structure"
 	"net/http"
 
-	neuteredFilesystem "code.mrmelon54.xyz/sean/neutered-filesystem"
+	neuteredFilesystem "code.mrmelon54.com/melon/neutered-filesystem"
 	"github.com/gorilla/mux"
 )
 
