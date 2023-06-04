@@ -1,12 +1,12 @@
 package server
 
 import (
+	nfHttp "code.mrmelon54.com/melon/neutered-filesystem/http"
 	"fmt"
 	"github.com/discord-plays/website/res"
 	"github.com/discord-plays/website/structure"
 	"net/http"
 
-	neuteredFilesystem "code.mrmelon54.com/melon/neutered-filesystem"
 	"github.com/gorilla/mux"
 )
 
@@ -57,5 +57,5 @@ func SetupDiscordPlaysRoot(dpHttp *DiscordPlaysHttp, router *mux.Router, linkDis
 		rw.Header().Set("Location", linkGithub)
 		rw.WriteHeader(http.StatusTemporaryRedirect)
 	})
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neuteredFilesystem.New(http.FS(res.GetAssetsFilesystem())))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(nfHttp.New(http.FS(res.GetAssetsFilesystem())))))
 }

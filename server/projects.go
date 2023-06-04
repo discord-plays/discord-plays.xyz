@@ -1,7 +1,7 @@
 package server
 
 import (
-	"code.mrmelon54.com/melon/neutered-filesystem"
+	nfHttp "code.mrmelon54.com/melon/neutered-filesystem/http"
 	"fmt"
 	"github.com/discord-plays/website/res"
 	"github.com/discord-plays/website/structure"
@@ -31,7 +31,7 @@ func SetupDiscordPlaysProjects(dpHttp *DiscordPlaysHttp, router *mux.Router) {
 	})
 	imageForProjectAddress(dpHttp, router, "logo")
 	imageForProjectAddress(dpHttp, router, "banner")
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(neutered_filesystem.New(http.FS(res.GetAssetsFilesystem())))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(nfHttp.New(http.FS(res.GetAssetsFilesystem())))))
 }
 
 func getProjectItem(dpHttp *DiscordPlaysHttp, req *http.Request) (*structure.ProjectItem, bool) {
